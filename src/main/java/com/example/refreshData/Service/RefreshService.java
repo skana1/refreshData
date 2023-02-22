@@ -9,7 +9,6 @@ import com.example.refreshData.Repository.ConditionsRepo;
 import com.example.refreshData.Repository.JDBCEntityRepository;
 import com.example.refreshData.Repository.ViewRepository;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -26,21 +25,22 @@ public class RefreshService {
     private final ConditionsRepo conditionsRepo;
     private final JDBCEntityRepository entityRepo;
 
-    public RefreshService(ViewRepository viewRepo, AttributeRepo attributeRepo, ConditionsRepo conditionsRepo, JDBCEntityRepository entityRepo) {
+    public RefreshService(ViewRepository viewRepo, AttributeRepo attributeRepo, ConditionsRepo conditionsRepo, JDBCEntityRepository entityRepo, Map<String, QueryElements> init) {
         this.viewRepo = viewRepo;
         this.attributeRepo = attributeRepo;
         this.conditionsRepo = conditionsRepo;
         this.entityRepo = entityRepo;
+        this.init = init;
     }
+    public Map<String,QueryElements> refreshData( ){
+            List<View> views = viewRepo.findAll();
+            views.stream().forEach(view -> {
+                List<Attribute> attributes = attributeRepo.findAttributesByView(view);
+                Conditions condition = conditionsRepo.findConditionsByView(view);
+                init.put(view.getName(), new QueryElements(view, attributes, condition));
+            });
 
-    public EntityDTO refreshData(){
-        List<View> views = viewRepo.findAll();
-        views.stream().forEach(view -> {
-            List<Attribute> attributes = attributeRepo.findAttributesByView(view);
-            Conditions condition = conditionsRepo.findConditionsByView(view);
-            init.put(view.getName(), new QueryElements(view, attributes, condition));
-        });;
-        Query query = new Query(RefreshService.init.get(views).getView(), RefreshService.init.get(views).getAttributes(),RefreshService.init.get(views).getCondition());
-        return entityRepo.getEntity(query);
-    }
-    }
+        return init;
+     }
+}
+
